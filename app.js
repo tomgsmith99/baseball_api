@@ -1,13 +1,10 @@
 
 const cors = require('cors')
 const express = require('express')
-var session = require('express-session')
 
 /*************************************************/
 
 var dbconn = require('./dbconn.js')
-
-var con = dbconn.mysql_conn()
 
 /*************************************************/
 
@@ -16,12 +13,6 @@ const app = express()
 app.use(cors())
 
 app.use(express.json())
-
-app.use(session({
-	secret: process.env.session_secret,
-	resave: false,
-	saveUninitialized: true
-}))
 
 /*************************************************/
 
@@ -32,22 +23,6 @@ app.listen(port, () => {
 })
 
 const season = process.env.SEASON
-
-/*************************************************/
-
-app.get('/favicon.ico', (req, res) => {
-	res.sendStatus(200)
-	return
-})
-
-app.get('/authenticated', (req, res) => {
-	if ("authenticated" in req.session && req.session.authenticated == true) {
-		res.json({"authenticated": true})
-	}
-	else {
-		res.json({"authenticated": false})
-	}
-})
 
 /*************************************************/
 // Owners
@@ -61,13 +36,19 @@ app.get('/api/owners/:owner_id', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
 		res.json(data[0])
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -80,13 +61,19 @@ app.get('/api/owners/:owner_id/current', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
 		res.json(data[0])
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -101,13 +88,20 @@ app.get('/api/owners/:owner_id/players/:player_id', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
+
 		res.json({"status": "ok"})
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -121,13 +115,19 @@ app.get('/api/owners/:owner_id/team', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
 		res.json(data)
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -139,19 +139,23 @@ app.get('/api/owners/:owner_id/team_name', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
 		res.json(data[0])
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
 app.post('/api/owners/:owner_id/team', (req, res) => {
-
-	console.dir(req.headers)
 
 	const authz_str = req.headers.authorization
 
@@ -175,7 +179,9 @@ app.post('/api/owners/:owner_id/team', (req, res) => {
 
 		console.dir(req.body)
 
-		const team_name = con.escape(req.body.team_name)
+		var connection = dbconn.mysql_conn()
+
+		const team_name = connection.escape(req.body.team_name)
 		const salary = req.body.salary
 		const bank = req.body.bank
 
@@ -185,13 +191,17 @@ app.post('/api/owners/:owner_id/team', (req, res) => {
 
 		console.log(query)
 
-		con.query(query, function (err, data) {
+		connection.query(query, function (err, data) {
 			if (err) {
 				console.log(err)
 				res.json(err)
 				return
 			}
 			res.json({status: "ok"})
+
+			connection.end(function(err) {
+				console.log("terminated mysql connection.")
+			})
 		})
 	}
 })
@@ -206,7 +216,9 @@ app.get('/api/players/:player_id/current', (req, res) => {
 
 	const query = `SELECT * FROM players_current_view WHERE player_id=${player_id}`
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
@@ -216,6 +228,10 @@ app.get('/api/players/:player_id/current', (req, res) => {
 		console.log(data)
 
 		res.json(data[0])
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -226,7 +242,9 @@ app.get('/api/players/:player_id/salary', (req, res) => {
 
 	const query = `SELECT salary FROM players_current WHERE player_id=${player_id}`
 
-	con.query(query, function (err, salary) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, salary) {
 		if (err) {
 			console.log(err)
 			res.json(err)
@@ -236,6 +254,10 @@ app.get('/api/players/:player_id/salary', (req, res) => {
 		console.log(salary)
 
 		res.json(salary[0])
+
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
+		})
 	})
 })
 
@@ -253,132 +275,20 @@ app.get('/api/seasons/current/players?*', (req, res) => {
 
 	console.log(query)
 
-	con.query(query, function (err, data) {
+	var connection = dbconn.mysql_conn()
+
+	connection.query(query, function (err, data) {
 		if (err) {
 			console.log(err)
 			res.json(err)
 			return
 		}
 		res.json(data)
-	})
-})
 
-app.get('/session/clear', (req, res) => {
-
-	delete req.session.authenticated
-
-	res.json({"status": "ok"})
-})
-
-/*************************************************/
-/* POST */
-
-app.post('/api/trades', (req, res) => {
-
-	if (!("authenticated" in req.session && req.session.authenticated)) {
-		res.sendStatus(403)
-		return
-	}
-
-	console.dir(req.body)
-
-	const owner_id = req.body.owner_id
-	const dropped_player_id = req.body.dropped_player_id
-	const added_player_id = req.body.added_player_id
-
-	let query = `SELECT salary, points FROM players_current WHERE player_id = ${added_player_id}`
-
-	console.log(query)
-
-	con.query(query, function (err, data) {
-		if (err) {
-			console.log(err)
-			res.json(err)
-			return
-		}
-
-		added_player_salary = data[0].salary
-		added_player_points = data[0].points
-
-		console.log(`added_player_salary: ${added_player_salary}`)
-
-		query = `SELECT salary FROM players_current WHERE player_id = ${dropped_player_id}`
-
-		con.query(query, function (err, data) {
-			if (err) {
-				console.log(err)
-				res.json(err)
-				return
-			}
-
-			dropped_player_salary = data[0].salary
-
-			console.log(`dropped_player_salary: ${dropped_player_salary}`)
-
-			let d = dayOfYear(new Date())
-
-			query = `INSERT INTO ownersXrosters_current SET owner_id = ${owner_id}, player_id = ${added_player_id}, start_date = ${d}, acquired = 1, prev_points = ${added_player_points}`
-
-			console.log(query)
-
-			con.query(query, function (err, data) {
-				if (err) {
-					console.log(err)
-					res.json(err)
-					return
-				}
-
-				query = `UPDATE ownersXrosters_current SET bench_date = ${d}, benched = 1 WHERE owner_id = ${owner_id} AND player_id = ${dropped_player_id}`
-
-				console.log(query)
-
-				con.query(query, function (err, data) {
-					if (err) {
-						console.log(err)
-						res.json(err)
-						return
-					}
-
-					if (added_player_salary > dropped_player_salary) {
-
-						let d = added_player_salary - dropped_player_salary
-
-						query = `UPDATE ownersXseasons_current SET bank = (bank - ${d}) WHERE owner_id = ${owner_id}`
-
-						console.log(query)
-
-						con.query(query, function (err, data) {
-							if (err) {
-								console.log(err)
-								res.json(err)
-								return
-							}
-							res.sendStatus(200)
-						})
-					}
-					else {
-						res.sendStatus(200)
-					}
-				})
-			})
+		connection.end(function(err) {
+			console.log("terminated mysql connection.")
 		})
 	})
-})
-
-app.post('/authenticate', (req, res) => {
-
-	const password = req.body.password
-
-	console.log("the password is: " + password)
-
-	if (password.toLowerCase() == process.env.group_password.toLowerCase()) {
-		req.session.authenticated = true
-
-		res.json({"status": "ok"})
-	}
-	else {
-		res.json({"status": "error"})
-	}
 })
 
 const dayOfYear = date =>

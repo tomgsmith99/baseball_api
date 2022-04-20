@@ -22,9 +22,11 @@ app.listen(port, () => {
 	console.log(`app listening at http://localhost:${port}`)
 })
 
-const season = process.env.SEASON
 const starting_positions_count = 12
 const trades_allowed = 2
+
+const todaysDate = new Date()
+const season = todaysDate.getFullYear()
 
 /*************************************************/
 // Owners
@@ -58,8 +60,7 @@ app.get('/api/owners/:owner_id/current', (req, res) => {
 
 	const owner_id = req.params.owner_id
 
-	let query = `SELECT * FROM ownersXseasons_current_view`
-	query += ` WHERE owner_id=${owner_id}`
+	let query = `SELECT bank, owner_id, nickname, season FROM ownersXseasons_detail WHERE season = ${season} AND owner_id = ${owner_id}`
 
 	console.log(query)
 
@@ -71,6 +72,7 @@ app.get('/api/owners/:owner_id/current', (req, res) => {
 			res.json(err)
 			return
 		}
+
 		res.json(data[0])
 
 		connection.end(function(err) {
@@ -83,7 +85,9 @@ app.get('/api/owners/:owner_id/current/trades/count', (req, res) => {
 
 	const owner_id = req.params.owner_id
 
-	let query = `SELECT COUNT(player_id) AS roster_count FROM ownersXrosters_current WHERE owner_id=${owner_id}`
+	// let query = `SELECT COUNT(player_id) AS roster_count FROM ownersXrosters_current WHERE owner_id=${owner_id}`
+
+	let query = `SELECT COUNT(player_id) AS trades FROM owner_x_roster_detail WHERE owner_id=${owner_id} AND season = ${season} AND benched != 0`
 
 	console.log(query)
 
@@ -98,19 +102,13 @@ app.get('/api/owners/:owner_id/current/trades/count', (req, res) => {
 
 		console.dir(data)
 
-		roster_count = data[0].roster_count
-
-		trades = roster_count - starting_positions_count
-
-		res.json({"trades": trades})
+		res.json({trades: data[0].trades})
 
 		connection.end(function(err) {
 			console.log("terminated mysql connection.")
 		})
 	})
 })
-
-	// $.getJSON(`{{{api_base}}}/api/owners/${owner_id}/current/trades/count`, function(data) {
 
 app.get('/api/owners/:owner_id/players/:player_id', (req, res) => {
 
@@ -144,9 +142,7 @@ app.get('/api/owners/:owner_id/team/starters', (req, res) => {
 
 	const owner_id = req.params.owner_id
 
-	let query = `SELECT * FROM ownersXrosters_current_view AS osx, position_order AS p`
-	query += ` WHERE osx.owner_id=${owner_id} AND benched=0 AND osx.pos = p.pos ORDER BY p.o ASC`
-	query += `, osx.lnf ASC`
+	let query = `SELECT player_id, pos, team, salary, fnf FROM owner_x_roster_detail WHERE owner_id = ${owner_id} AND season = ${season} AND benched = 0 ORDER BY o ASC, salary DESC`
 
 	console.log(query)
 
@@ -247,9 +243,10 @@ app.post('/api/owners/:owner_id/team', (req, res) => {
 app.get('/api/players/:player_id/current', (req, res) => {
 
 	var player_id = req.params.player_id
+
 	console.log(player_id)
 
-	const query = `SELECT * FROM players_current_view WHERE player_id=${player_id}`
+	const query = `SELECT * FROM player_x_season_detail WHERE player_id=${player_id} AND season=${season}`
 
 	var connection = dbconn.mysql_conn()
 
@@ -305,8 +302,7 @@ app.get('/api/seasons/current/players?*', (req, res) => {
 	const owner_id = req.query.owner_id
 	const pos = req.query.pos
 
-	let query = `SELECT * FROM players_current_view WHERE salary <= ${max_salary}`
-	query += ` AND pos = '${pos}' AND player_id NOT IN (SELECT player_id FROM ownersXrosters_current_view WHERE owner_id = ${owner_id}) ORDER BY salary DESC`
+	let query = `SELECT * FROM player_x_season_detail WHERE salary <= ${max_salary} AND pos = '${pos}' AND season = ${season} AND player_id NOT IN (SELECT player_id FROM owner_x_roster_detail WHERE owner_id = ${owner_id} AND season = ${season}) ORDER BY salary DESC`
 
 	console.log(query)
 

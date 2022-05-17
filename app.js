@@ -246,7 +246,9 @@ app.get('/api/players/:player_id/current', (req, res) => {
 
 	console.log(player_id)
 
-	const query = `SELECT * FROM player_x_season_detail WHERE player_id=${player_id} AND season=${season}`
+	// const query = `SELECT * FROM player_x_season_detail WHERE player_id=${player_id} AND season=${season}`
+
+	const query = `SELECT * FROM player_x_season WHERE player_id=${player_id} AND season=${season}`
 
 	var connection = dbconn.mysql_conn()
 
@@ -302,7 +304,9 @@ app.get('/api/seasons/current/players?*', (req, res) => {
 	const owner_id = req.query.owner_id
 	const pos = req.query.pos
 
-	let query = `SELECT * FROM player_x_season_detail WHERE salary <= ${max_salary} AND pos = '${pos}' AND season = ${season} AND player_id NOT IN (SELECT player_id FROM owner_x_roster_detail WHERE owner_id = ${owner_id} AND season = ${season}) ORDER BY salary DESC`
+	let query = `SELECT * FROM player_x_season WHERE salary <= ${max_salary} AND pos = '${pos}' AND season = ${season} AND player_id NOT IN (SELECT player_id FROM owner_x_roster_detail WHERE owner_id = ${owner_id} AND season = ${season}) ORDER BY salary DESC`
+
+	// let query = `SELECT * FROM player_x_season_detail WHERE salary <= ${max_salary} AND pos = '${pos}' AND season = ${season} AND player_id NOT IN (SELECT player_id FROM owner_x_roster_detail WHERE owner_id = ${owner_id} AND season = ${season}) ORDER BY salary DESC`
 
 	console.log(query)
 

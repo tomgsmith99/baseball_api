@@ -29,6 +29,13 @@ const todaysDate = new Date()
 const season = todaysDate.getFullYear()
 
 /*************************************************/
+// is API awake?
+
+app.get('/', (req, res) => {
+	res.sendStatus(200)
+})
+
+/*************************************************/
 // Owners
 
 app.get('/api/owners/:owner_id', (req, res) => {
